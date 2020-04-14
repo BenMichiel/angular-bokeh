@@ -1,15 +1,15 @@
 import { Injectable } from '@angular/core';
 import { MessageService } from './../../core/services/message.service';
-import { filter } from 'rxjs/operators';
+import { filter, first } from 'rxjs/operators';
 
 // this is the global hook to the bokehjs lib (without types)
 declare var Bokeh: any;
 
 
 @Injectable({
-    providedIn: 'root'
-  })
-  export class BokehService {
+  providedIn: 'root'
+})
+export class BokehService {
 
     constructor(private msgService: MessageService) { }
 
@@ -26,19 +26,23 @@ declare var Bokeh: any;
 
     public getChart(id: string) {
       const callbackId = 'plot';
+
       const msg = {
         name: 'addChart',
         args: [id, callbackId],
         action: 'default'
       };
+
       this.msgService.sendMsg(msg);
-      this.msgService.awaitMessage()
-        .pipe(filter(msg=> msg.name == callbackId))
-        .subscribe(
-          msg => {
-            this.plot(msg.args.id, msg.args.item);
-          }
-        )
+
+      this.msgService.awaitMessage().pipe(
+        filter(response => response.name === callbackId),
+        first()
+      ).subscribe(
+        response => {
+          this.plot(response.args.id, response.args.item);
+        }
+      );
     }
 }
 
